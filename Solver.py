@@ -55,6 +55,37 @@ def solution(P, G, alpha):
     # TODO implement Value Iteration, Policy Iteration, 
     #      Linear Programming or a combination of these
 
+    # 1) Value Iteration:
+
+    # Initialize for each state with zero initially!
+    # Note number of states is K, where K = T * M * N * D
+    # and L is the number of inputs, where L = [0, 1, 2], DOWN, UP, STAY
+    
+    eps = 1e-6
+    max_iterations = 100 # can be changed for instance until convergence is reached?
+
+    # Inputs:
+    L = np.array([0, 1, 2]) 
+    # 0: DOWN
+    # 1: STAY
+    # 2: UP
+
+    for _ in range(max_iterations):
+        J_updated = np.zeros(K) # Update (Initially all zeros!)
+        for i in range(K): # Iteration through every State!
+            Q = np.zeros(L.size)
+            for input in range(L.size):
+                Q[input] = G[i, input] + alpha * np.sum(P[i, :, input] * J_opt)
+            J_updated[i] = np.min(Q) 
+            u_opt[i] = np.argmin(Q) # returns the index of where Q is min!
+
+        if np.max(np.abs(J_updated - J_opt)) < eps:
+            break
+
+        J_opt = J_updated.copy()
+
+
+
     return J_opt, u_opt
 
 def freestyle_solution(Constants):

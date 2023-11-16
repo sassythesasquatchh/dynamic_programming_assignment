@@ -45,7 +45,7 @@ if __name__ == "__main__":
     # Set the following to True as you progress with the files
     transition_probabilities_implemented = True
     stage_costs_implemented = True
-    solution_implemented = False
+    solution_implemented = True
     freestyle_solution_implemented = False
 
     # Compute transition probabilities

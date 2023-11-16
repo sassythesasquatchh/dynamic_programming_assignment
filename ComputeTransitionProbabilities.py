@@ -51,7 +51,6 @@ def compute_transition_probabilities(Constants):
     y_step = Constants.M
     z_step = Constants.M * Constants.N
     t_step = Constants.M * Constants.N * Constants.D
-    steps = np.array([x_step, y_step, z_step, t_step])
 
     t_shift = Constants.T * t_step # Not sure here!!!
 
