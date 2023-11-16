@@ -43,7 +43,7 @@ if __name__ == "__main__":
     L = len(input_space)
 
     # Set the following to True as you progress with the files
-    transition_probabilities_implemented = False
+    transition_probabilities_implemented = True
     stage_costs_implemented = False
     solution_implemented = False
     freestyle_solution_implemented = False
