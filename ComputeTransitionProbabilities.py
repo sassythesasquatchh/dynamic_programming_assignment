@@ -54,6 +54,8 @@ def compute_transition_probabilities(Constants):
 
     t_shift = Constants.T * t_step # Not sure here!!!
 
+    
+
     # These were derived due to the given dynamics:
     # For the Time:
     # t_k1 = t_k0 + 1; thus the stepsize is t = 1!
@@ -88,6 +90,13 @@ def compute_transition_probabilities(Constants):
             return -z_step
         elif u == Constants.V_UP:
             return z_step
+        
+    def probability_stay(u, Constants):
+        if ((u == Constants.V_DOWN) or (u == Constants.V_UP)):
+            return Constants.P_V_TRANSITION[0]
+        else: # u == Constants.V_STAY
+            return 1.0
+
 
 
     # # 1) Input DOWN!
@@ -282,82 +291,82 @@ def compute_transition_probabilities(Constants):
                         if z != u_boundary(u, Constants):
                             # STAY in Z:
                             # STAY (Don't move at all!)
-                            P[pos, pos + t_step - t_transform(t, Constants, t_shift), u] = Constants.ALPHA \
-                                * Constants.P_V_TRANSITION[0] \
+                            P[pos, pos + t_step - t_transform(t, Constants, t_shift), u] = \
+                                probability_stay(u, Constants) \
                                 * Constants.P_H_TRANSITION[z].P_WIND[Constants.H_STAY]
                             # Moving WEST
                             if x != (Constants.M - 1):
                                 # Probability of staying in y- and z-direction and only moving west!
-                                P[pos, pos + t_step - t_transform(t, Constants, t_shift) + x_step, u] = Constants.ALPHA \
-                                    * Constants.P_V_TRANSITION[0] \
+                                P[pos, pos + t_step - t_transform(t, Constants, t_shift) + x_step, u] = \
+                                    probability_stay(u, Constants) \
                                     * Constants.P_H_TRANSITION[z].P_WIND[Constants.H_WEST]
                             else: # x == M-1 going west means you are at x == 0 again; Note: moving DOWN in z-direction,
                                 # STAY in y-direction and move WEST (x-direction) at the boundary!
-                                P[pos, pos + t_step - t_transform(t, Constants, t_shift) + x_step - Constants.M, u] = Constants.ALPHA \
-                                    * Constants.P_V_TRANSITION[0] \
+                                P[pos, pos + t_step - t_transform(t, Constants, t_shift) + x_step - Constants.M, u] = \
+                                    probability_stay(u, Constants) \
                                     * Constants.P_H_TRANSITION[z].P_WIND[Constants.H_WEST]
                             # Moving EAST
                             if x != 0:
                                 # Probability of moving DOWN in z-direction, staying in y-direction and only moving east!
-                                P[pos, pos + t_step - t_transform(t, Constants, t_shift) - x_step, u] = Constants.ALPHA \
-                                    * Constants.P_V_TRANSITION[0] \
+                                P[pos, pos + t_step - t_transform(t, Constants, t_shift) - x_step, u] = \
+                                    probability_stay(u, Constants) \
                                     * Constants.P_H_TRANSITION[z].P_WIND[Constants.H_EAST]
                             else: # Moving EAST at boundary x == 0, will result in x == M-1!
-                                P[pos, pos + t_step - t_transform(t, Constants, t_shift) - x_step + Constants.M, u] = Constants.ALPHA \
-                                    * Constants.P_V_TRANSITION[0] \
+                                P[pos, pos + t_step - t_transform(t, Constants, t_shift) - x_step + Constants.M, u] = \
+                                    probability_stay(u, Constants) \
                                     * Constants.P_H_TRANSITION[z].P_WIND[Constants.H_EAST]
                             # Moving NORTH
                             if y != (Constants.N - 1): # Not and the Boundary N-1!
                                 # Probability of moving NORTH (y-dir), going DOWN (z-dir), STAY (x-dir)
-                                P[pos, pos + t_step - t_transform(t, Constants, t_shift) + y_step, u] = Constants.ALPHA \
-                                    * Constants.P_V_TRANSITION[0] \
+                                P[pos, pos + t_step - t_transform(t, Constants, t_shift) + y_step, u] = \
+                                    probability_stay(u, Constants) \
                                     * Constants.P_H_TRANSITION[z].P_WIND[Constants.H_NORTH]
                             # Note: At the Boudnary N-1 go North is out of bounce which has a probability of 0!
                                 
                             # Moving SOUTH
                             # only possible if y != 0 !!!
                             if y != 0:
-                                P[pos, pos + t_step - t_transform(t, Constants, t_shift) - y_step, u] = Constants.ALPHA \
-                                    * Constants.P_V_TRANSITION[0] \
+                                P[pos, pos + t_step - t_transform(t, Constants, t_shift) - y_step, u] = \
+                                    probability_stay(u, Constants) \
                                     * Constants.P_H_TRANSITION[z].P_WIND[Constants.H_SOUTH]
 
                             if u != Constants.V_STAY: 
                                 # Move DOWN or UP if u != STAY
                                 # STAY in every other direction x and y!
                                 # Note: Still only possible if z != 0!
-                                P[pos, pos + t_step - t_transform(t, Constants, t_shift) + move(u, Constants, z_step), u] = Constants.ALPHA \
-                                    * Constants.P_V_TRANSITION[1] \
+                                P[pos, pos + t_step - t_transform(t, Constants, t_shift) + move(u, Constants, z_step), u] = \
+                                    Constants.P_V_TRANSITION[1] \
                                     * Constants.P_H_TRANSITION[z].P_WIND[Constants.H_STAY]
                                 # Moving WEST
                                 if x != (Constants.M - 1):
                                     # Only possible if M - 1
-                                    P[pos, pos + t_step - t_transform(t, Constants, t_shift) + move(u, Constants, z_step) + x_step, u] = Constants.ALPHA \
-                                        * Constants.P_V_TRANSITION[1] \
+                                    P[pos, pos + t_step - t_transform(t, Constants, t_shift) + move(u, Constants, z_step) + x_step, u] = \
+                                        Constants.P_V_TRANSITION[1] \
                                         * Constants.P_H_TRANSITION[z].P_WIND[Constants.H_WEST]
                                 else: # Return to x == 0 if going west from M - 1
-                                    P[pos, pos + t_step - t_transform(t, Constants, t_shift) + move(u, Constants, z_step) + x_step - Constants.M, u] = Constants.ALPHA \
-                                        * Constants.P_V_TRANSITION[1] \
+                                    P[pos, pos + t_step - t_transform(t, Constants, t_shift) + move(u, Constants, z_step) + x_step - Constants.M, u] = \
+                                        Constants.P_V_TRANSITION[1] \
                                         * Constants.P_H_TRANSITION[z].P_WIND[Constants.H_WEST]
                                 # Moving EAST
                                 if x != 0:
-                                    P[pos, pos + t_step - t_transform(t, Constants, t_shift) + move(u, Constants, z_step) - x_step, u] = Constants.ALPHA \
-                                        * Constants.P_V_TRANSITION[1] \
+                                    P[pos, pos + t_step - t_transform(t, Constants, t_shift) + move(u, Constants, z_step) - x_step, u] = \
+                                        Constants.P_V_TRANSITION[1] \
                                         * Constants.P_H_TRANSITION[z].P_WIND[Constants.H_EAST]
                                 else: # Return again to M - 1!
-                                    P[pos, pos + t_step - t_transform(t, Constants, t_shift) + move(u, Constants, z_step) - x_step + Constants.M, u] = Constants.ALPHA \
-                                        * Constants.P_V_TRANSITION[1] \
+                                    P[pos, pos + t_step - t_transform(t, Constants, t_shift) + move(u, Constants, z_step) - x_step + Constants.M, u] = \
+                                        Constants.P_V_TRANSITION[1] \
                                         * Constants.P_H_TRANSITION[z].P_WIND[Constants.H_EAST]
                                 # Moving North
                                 if y != (Constants.N - 1): # If not at upper boundary!
-                                    P[pos, pos + t_step - t_transform(t, Constants, t_shift) + move(u, Constants, z_step) + y_step, u] = Constants.ALPHA \
-                                        * Constants.P_V_TRANSITION[1] \
+                                    P[pos, pos + t_step - t_transform(t, Constants, t_shift) + move(u, Constants, z_step) + y_step, u] = \
+                                        Constants.P_V_TRANSITION[1] \
                                         * Constants.P_H_TRANSITION[z].P_WIND[Constants.H_NORTH]
                                 # Note: Else Moving North is not possible if at the boundary, henve P = 0!
                                 
                                 # Moving SOUTH
                                 if y != 0:
-                                    P[pos, pos + t_step - t_transform(t, Constants, t_shift) + move(u, Constants, z_step) - y_step, u] = Constants.ALPHA \
-                                        * Constants.P_V_TRANSITION[1] \
+                                    P[pos, pos + t_step - t_transform(t, Constants, t_shift) + move(u, Constants, z_step) - y_step, u] = \
+                                        Constants.P_V_TRANSITION[1] \
                                         * Constants.P_H_TRANSITION[z].P_WIND[Constants.H_SOUTH]
                                 # Note: Else Moving South at the boundary is not possible, hence also here P = 0!
 

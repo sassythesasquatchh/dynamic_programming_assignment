@@ -84,8 +84,6 @@ def solution(P, G, alpha):
 
         J_opt = J_updated.copy()
 
-
-
     return J_opt, u_opt
 
 def freestyle_solution(Constants):
