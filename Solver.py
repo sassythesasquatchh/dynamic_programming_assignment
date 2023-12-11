@@ -71,7 +71,7 @@ def solution(P, G, alpha):
     # 1 = Gauss Seidel value iteration (passing)
     # 2 = Linear Programming (passing)
     # 3 = Policy Iteration (passing)
-    solver = 3
+    solver = 2
 
     def get_possible_next_states(i_t, i_z, i_y, i_x, i, u):
         j = []
@@ -236,6 +236,18 @@ def solution(P, G, alpha):
         )
         if result.status != 0:
             raise ValueError("Linear program failed")
+        
+        # Now derive the optimal policy for optimal cost:
+        for i_t in range(Constants.T):
+            for i_z in range(Constants.D):
+                for i_y in range(Constants.N):
+                    for i_x in range(Constants.M):
+                        i = i_x + i_y * y_step + i_z * z_step + i_t * t_step
+                        cost = np.empty(len(input_space))
+                        for u in input_space:
+                            cost[u] = G[i,u] + alpha * np.sum(P[i, :, u] * J_opt)
+                        u_opt[i] = np.argmin(cost)
+
         return result.x, u_opt
 
     # --------------------------------------------------------------------------------
@@ -294,7 +306,7 @@ def solution(P, G, alpha):
     # ---------------------------------------------------------------------------------
 
 
-def freestyle_solution(Constants):
+def freestyle_solution(Constants, P, G):
     """Computes the optimal cost and the optimal control input for each
     state of the state space solving the discounted stochastic shortest
     path problem with a 200 MiB memory cap.
@@ -306,6 +318,11 @@ def freestyle_solution(Constants):
         np.array: The optimal cost to go for the discounted stochastic SPP
         np.array: The optimal control policy for the discounted stochastic SPP
     """
+
+    from Constants import Constants
+    input_space = [Constants.V_DOWN, Constants.V_STAY, Constants.V_UP]
+    alpha = Constants.ALPHA
+
     K = Constants.T * Constants.D * Constants.N * Constants.M
 
     J_opt = np.zeros(K)
@@ -316,5 +333,118 @@ def freestyle_solution(Constants):
     #      compute_transition_probabilities and
     #      compute_stage_cost, but you are also free to introduce
     #      optimizations.
+
+    ####################### Linear Programming #########################
+    from scipy.optimize import linprog
+    from scipy.sparse import csr_matrix, lil_matrix
+
+    def linear_programming(P, G, alpha, K, input_space, max_iter=None):
+
+        x_step = 1
+        y_step = Constants.M
+        z_step = y_step * Constants.N
+        t_step = z_step * Constants.D
+
+        c = -np.ones(K)
+        L = len(input_space)
+        # A_ub = np.zeros((K * L, K))
+        A_ub = lil_matrix((K * L, K))
+        # A_ub = csr_matrix((K * L, K))
+        b_ub = np.zeros(K * L)
+
+        for i in range(L):
+            A_ub[K * i : K * (i + 1) if i != L - 1 else None, :] = (
+                np.eye(K) - alpha * P[:, :, i]
+            )
+            b_ub[K * i : K * (i + 1) if i != L - 1 else None] = G[:, i]
+
+        valid_indices = ~np.isinf(b_ub)
+        b_ub = b_ub[valid_indices]
+        A_ub = A_ub[valid_indices, :]
+        # b_ub = -b_ub
+
+        # Set an iteration threshold!
+        options = {'maxiter': max_iter} if max_iter is not None else {}
+
+        result = linprog(
+            c=c, A_ub=A_ub, b_ub=b_ub, method="highs", bounds=[(None, None)], options=options
+        )
+        if result.status != 0:
+            raise ValueError("Linear program failed")
+        
+        # Now derive the optimal policy for optimal cost:
+        for i_t in range(Constants.T):
+            for i_z in range(Constants.D):
+                for i_y in range(Constants.N):
+                    for i_x in range(Constants.M):
+                        i = i_x + i_y * y_step + i_z * z_step + i_t * t_step
+                        cost = np.empty(len(input_space))
+                        for u in input_space:
+                            # Note: result.x == J_opt!
+                            cost[u] = G[i,u] + alpha * np.sum(P[i, :, u] * result.x)
+                        u_opt[i] = np.argmin(cost)
+
+        return result.x, u_opt
+
+    # --------------------------------------------------------------------------------
+
+
+    ######################## Gauss-Seidel Value Iteration ###########################
+    def mixed_iteration_method(P, G, input_space):
+        J_opt = np.ones(K)
+        J_opt_prev = np.ones(K)
+
+        x_step = 1
+        y_step = Constants.M
+        z_step = y_step * Constants.N
+        t_step = z_step * Constants.D
+
+        err = 1e-100
+        verbose = True
+
+        iter = 0
+        while iter < 300:
+            iter += 1
+            for i_t in range(Constants.T):
+                for i_z in range(Constants.D):
+                    for i_y in range(Constants.N):
+                        for i_x in range(Constants.M):
+                            i = i_x + i_y * y_step + i_z * z_step + i_t * t_step
+                            # cost = expected_cost(
+                            #     G, P, i=i, i_t=i_t, i_z=i_z, i_y=i_y, i_x=i_x
+                            # )
+                            cost = np.empty(len(input_space))
+                            for u in input_space:
+                                # print(P[i, P[i, :, u] != 0, u])
+                                cost[u] = G[i, u] + alpha * np.sum(P[i, :, u] * J_opt)
+                            J_opt[i] = np.min(cost)
+                            u_opt[i] = np.argmin(cost)
+
+            current_error = np.max(np.abs(J_opt_prev - J_opt)) / np.max(np.abs(J_opt))
+            if np.allclose(J_opt, J_opt_prev, rtol=1e-04, atol=1e-07):
+                # if current_error < err:
+                break
+            else:
+                J_opt_prev = np.copy(J_opt)
+                if verbose:
+                    print("Iteration {} with error {:.4f}".format(iter, current_error))
+
+        return J_opt, u_opt
+    # ----------------------------------------------------------
+
+    # The Goal is that the Memory usage must be below 250 MiB according to 
+    # the exercise document!
+    # Hence We need to analyze the State Space which is given by K
+
+    if K > 1944:
+        J_opt, u_opt = mixed_iteration_method(P, G, input_space)
+    else:
+        J_opt, u_opt = linear_programming(P, G, alpha, K, input_space)
+
+
+
+    # J_opt, u_opt = mixed_iteration_method(P, G, input_space)
+    # J_opt_2, u_opt_2 = linear_programming(P, G, alpha, K, input_space)
+
 
     return J_opt, u_opt

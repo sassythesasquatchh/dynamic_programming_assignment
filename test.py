@@ -81,7 +81,8 @@ if __name__ == "__main__":
             print("[guided solution] Correct optimal cost")
 
         # freestyle solution
-        [J_opt, u_opt] = freestyle_solution(Constants)
+        # [J_opt, u_opt] = freestyle_solution(Constants)
+        [J_opt, u_opt] = freestyle_solution(Constants, P, G)
         if not np.allclose(J_opt, file["J"], rtol=1e-4, atol=1e-7):
             print("[freestyle solution] Wrong optimal cost")
             passed = False

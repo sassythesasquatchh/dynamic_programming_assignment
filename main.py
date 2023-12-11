@@ -108,6 +108,11 @@ if __name__ == "__main__":
         current, peak = tracemalloc.get_traced_memory()
         tracemalloc.stop()
 
+        #############################################
+        state_space_size = G.shape[0]
+        print("State Space Size: ", state_space_size)
+        #############################################
+
         print("\r[X] Discounted stochastic shortest path problem solved.    ")
         print("Elapsed time: {:.6f} seconds".format(end_time - start_time))
         print("Peak memory usage in MiB: {:.4}".format(peak / 2**20))
@@ -119,19 +124,25 @@ if __name__ == "__main__":
         u_opt = np.zeros(K)
 
     if freestyle_solution_implemented:
-        P = None
-        G = None
+        import tracemalloc
+        import time
+        # First step we want to compute P and G!
+        P = compute_transition_probabilities(Constants)
+        G = compute_stage_cost(Constants)
 
         sys.stdout.write("[ ] Solving discounted stochastic shortest path problem...")
+        start_time = time.time()
         tracemalloc.start()
 
         # TODO implement this function in Solver.py
-        J_opt, u_opt = freestyle_solution(Constants)
+        J_opt, u_opt = freestyle_solution(Constants, P, G)
 
         current, peak = tracemalloc.get_traced_memory()
         tracemalloc.stop()
+        end_time = time.time()
         print("\r[X] Discounted stochastic shortest path problem solved.   ")
         print("Peak memory usage in MiB: {:.4}".format(peak / 2**20))
+        print("Elapsed time: {:.6f} seconds".format(end_time - start_time))
     else:
         print(
             "[ ] Freestyle solution not implemented. If this is unexpected, check the boolean 'freestyle_solution_implemented'."
