@@ -108,11 +108,6 @@ if __name__ == "__main__":
         current, peak = tracemalloc.get_traced_memory()
         tracemalloc.stop()
 
-        #############################################
-        state_space_size = G.shape[0]
-        print("State Space Size: ", state_space_size)
-        #############################################
-
         print("\r[X] Discounted stochastic shortest path problem solved.    ")
         print("Elapsed time: {:.6f} seconds".format(end_time - start_time))
         print("Peak memory usage in MiB: {:.4}".format(peak / 2**20))
