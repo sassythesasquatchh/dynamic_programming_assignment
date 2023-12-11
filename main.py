@@ -164,5 +164,7 @@ if __name__ == "__main__":
         LOC_CITIES=Constants.CITIES_LOCATIONS,
     )
 
+    # "./workspaces/workspace_",
+
     # Terminated
     print("\rWorkspace saved for inspection.    ")
