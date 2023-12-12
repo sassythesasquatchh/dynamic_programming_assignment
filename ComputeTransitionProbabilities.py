@@ -19,7 +19,6 @@
 
 import numpy as np
 
-
 def compute_transition_probabilities(Constants):
     """Computes the transition probability matrix P.
 
@@ -40,6 +39,7 @@ def compute_transition_probabilities(Constants):
     L = len(input_space)
 
     P = np.zeros((K, K, L))
+
     # state_space = np.array(list(itertools.product(t, z, y, x)))
 
     # itertools.product constructs the state space by forming all combinations of the given sets.

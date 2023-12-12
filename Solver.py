@@ -152,7 +152,7 @@ def solution(P, G, alpha):
                             u_opt[i] = np.argmin(cost)
 
             current_error = np.max(np.abs(J_opt_prev - J_opt)) / np.max(np.abs(J_opt))
-            if np.allclose(J_opt, J_opt_prev, rtol=1e-04, atol=1e-07):
+            if np.allclose(J_opt, J_opt_prev, rtol=1e-06, atol=1e-07):
                 # if current_error < err:
                 break
             else:
@@ -214,10 +214,16 @@ def solution(P, G, alpha):
     # ----------------------Linear Programming------------------------------
     if solver == 2:
         from scipy.optimize import linprog
+        from scipy.sparse import lil_matrix
 
         c = -np.ones(K)
         L = len(input_space)
-        A_ub = np.zeros((K * L, K))
+
+        if K > 1944:
+            A_ub = lil_matrix((K * L, K))
+        else:
+            A_ub = np.zeros((K * L, K))
+
         b_ub = np.zeros(K * L)
 
         for i in range(L):
@@ -421,7 +427,7 @@ def freestyle_solution(Constants, P, G):
                             u_opt[i] = np.argmin(cost)
 
             current_error = np.max(np.abs(J_opt_prev - J_opt)) / np.max(np.abs(J_opt))
-            if np.allclose(J_opt, J_opt_prev, rtol=1e-04, atol=1e-07):
+            if np.allclose(J_opt, J_opt_prev, rtol=1e-05, atol=1e-07):
                 # if current_error < err:
                 break
             else:
@@ -436,9 +442,12 @@ def freestyle_solution(Constants, P, G):
     # the exercise document!
     # Hence We need to analyze the State Space which is given by K
 
-    if K > 1944:
+    if K > 3840:
         J_opt, u_opt = mixed_iteration_method(P, G, input_space)
     else:
+        # Note:
+        # If K <= 1944 we use np.zeros
+        # If 1944 < K <= 3840: we use lil_matrix
         J_opt, u_opt = linear_programming(P, G, alpha, K, input_space)
 
 

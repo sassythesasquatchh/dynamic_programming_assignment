@@ -111,6 +111,8 @@ if __name__ == "__main__":
         print("\r[X] Discounted stochastic shortest path problem solved.    ")
         print("Elapsed time: {:.6f} seconds".format(end_time - start_time))
         print("Peak memory usage in MiB: {:.4}".format(peak / 2**20))
+        States = G.shape[0]
+        print("Size of the State Space: ", States)
     else:
         print(
             "[ ] Solution of the discounted stochastic shortest path problem not implemented. If this is unexpected, check the boolean 'solution_implemented'."

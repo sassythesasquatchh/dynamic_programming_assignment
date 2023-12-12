@@ -69,7 +69,7 @@ class Constants:
     # Feel free to tweak these to test your solution.
 
     # State space constants
-    N = 3  # Size of the y axis (north to south)
+    N = 6  # Size of the y axis (north to south)
     M = 16  # Size of the x axis (west to east)
     D = 4  # Size of the z axis (bottom to top)
     T = 10  # Number of time subdivisions
