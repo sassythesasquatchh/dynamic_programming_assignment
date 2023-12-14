@@ -20,7 +20,6 @@
 
 import numpy as np
 
-
 def solution(P, G, alpha):
     """Computes the optimal cost and the optimal control input for each
     state of the state space solving the discounted stochastic shortest
@@ -312,7 +311,7 @@ def solution(P, G, alpha):
     # ---------------------------------------------------------------------------------
 
 
-def freestyle_solution(Constants, P, G):
+def freestyle_solution(Constants, P = None, G = None):
     """Computes the optimal cost and the optimal control input for each
     state of the state space solving the discounted stochastic shortest
     path problem with a 200 MiB memory cap.
@@ -340,6 +339,12 @@ def freestyle_solution(Constants, P, G):
     #      compute_stage_cost, but you are also free to introduce
     #      optimizations.
 
+    if (P == None) or (G == None):
+        from ComputeTransitionProbabilities import compute_transition_probabilities
+        from ComputeStageCosts import compute_stage_cost
+        P = compute_transition_probabilities(Constants=Constants)
+        G = compute_stage_cost(Constants=Constants)
+
     ####################### Linear Programming #########################
     from scipy.optimize import linprog
     from scipy.sparse import csr_matrix, lil_matrix
@@ -354,8 +359,15 @@ def freestyle_solution(Constants, P, G):
         c = -np.ones(K)
         L = len(input_space)
         # A_ub = np.zeros((K * L, K))
-        A_ub = lil_matrix((K * L, K))
+        # A_ub = lil_matrix((K * L, K))
         # A_ub = csr_matrix((K * L, K))
+        # b_ub = np.zeros(K * L)
+
+        if K > 1944:
+            A_ub = lil_matrix((K * L, K))
+        else:
+            A_ub = np.zeros((K * L, K))
+
         b_ub = np.zeros(K * L)
 
         for i in range(L):
