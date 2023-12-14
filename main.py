@@ -49,7 +49,7 @@ if __name__ == "__main__":
     transition_probabilities_implemented = True
     stage_costs_implemented = True
     solution_implemented = True
-    freestyle_solution_implemented = False
+    freestyle_solution_implemented = True
 
     # Compute transition probabilities
     if transition_probabilities_implemented and not freestyle_solution_implemented:
@@ -124,15 +124,17 @@ if __name__ == "__main__":
         import tracemalloc
         import time
         # First step we want to compute P and G!
-        P = compute_transition_probabilities(Constants)
-        G = compute_stage_cost(Constants)
+        # P = compute_transition_probabilities(Constants)
+        # G = compute_stage_cost(Constants)
+        P = None
+        G = None
 
         sys.stdout.write("[ ] Solving discounted stochastic shortest path problem...")
         start_time = time.time()
         tracemalloc.start()
 
         # TODO implement this function in Solver.py
-        J_opt, u_opt = freestyle_solution(Constants, P, G)
+        J_opt, u_opt = freestyle_solution(Constants)
 
         current, peak = tracemalloc.get_traced_memory()
         tracemalloc.stop()
