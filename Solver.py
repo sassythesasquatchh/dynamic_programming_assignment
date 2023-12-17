@@ -339,17 +339,20 @@ def freestyle_solution(Constants, P = None, G = None):
     #      compute_stage_cost, but you are also free to introduce
     #      optimizations.
 
-    if (P == None) or (G == None):
-        from ComputeTransitionProbabilities import compute_transition_probabilities
-        from ComputeStageCosts import compute_stage_cost
-        P = compute_transition_probabilities(Constants=Constants)
-        G = compute_stage_cost(Constants=Constants)
-
-    ####################### Linear Programming #########################
     from scipy.optimize import linprog
     from scipy.sparse import csr_matrix, lil_matrix
 
-    def linear_programming(P, G, alpha, K, input_space, max_iter=None):
+    if (P == None) or (G == None):
+        from ComputeTransitionProbabilities import compute_transition_probabilities, compute_transition_probabilities_csr
+        from ComputeStageCosts import compute_stage_cost
+        # P = compute_transition_probabilities(Constants=Constants)
+        P_down, P_stay, P_up = compute_transition_probabilities_csr(Constants= Constants)
+        # P = np.zeros(K, K)
+        G = compute_stage_cost(Constants=Constants)
+
+    ####################### Linear Programming #########################
+
+    def linear_programming(P_0, P_1, P_2, G, alpha, K, input_space, max_iter=None):
 
         x_step = 1
         y_step = Constants.M
@@ -371,8 +374,15 @@ def freestyle_solution(Constants, P = None, G = None):
         b_ub = np.zeros(K * L)
 
         for i in range(L):
+            if i == 0:
+                P = P_down.todense()
+            elif i == 1:
+                P = P_stay.todense()
+            elif i == 2:
+                P = P_up.todense()
+            
             A_ub[K * i : K * (i + 1) if i != L - 1 else None, :] = (
-                np.eye(K) - alpha * P[:, :, i]
+                np.eye(K) - alpha * P[:, :]
             )
             b_ub[K * i : K * (i + 1) if i != L - 1 else None] = G[:, i]
 
@@ -398,17 +408,24 @@ def freestyle_solution(Constants, P = None, G = None):
                         i = i_x + i_y * y_step + i_z * z_step + i_t * t_step
                         cost = np.empty(len(input_space))
                         for u in input_space:
-                            # Note: result.x == J_opt!
-                            cost[u] = G[i,u] + alpha * np.sum(P[i, :, u] * result.x)
-                        u_opt[i] = np.argmin(cost)
+                            if u == 0:
+                                P = P_down.todense()
+                            elif u == 1:
+                                P = P_stay.todense()
+                            elif u == 2:
+                                P = P_up.todense()
 
+                            # Note: result.x == J_opt!
+                            cost[u] = G[i,u] + alpha * np.sum(P[i, :].T * result.x)
+                        u_opt[i] = np.argmin(cost)
+        del P
         return result.x, u_opt
 
     # --------------------------------------------------------------------------------
 
 
     ######################## Gauss-Seidel Value Iteration ###########################
-    def mixed_iteration_method(P, G, input_space):
+    def mixed_iteration_method(P_0, P_1, P_2, G, input_space):
         J_opt = np.ones(K)
         J_opt_prev = np.ones(K)
 
@@ -433,11 +450,18 @@ def freestyle_solution(Constants, P = None, G = None):
                             # )
                             cost = np.empty(len(input_space))
                             for u in input_space:
+                                if u == 0:
+                                    P = P_down.todense()
+                                elif u == 1:
+                                    P = P_stay.todense()
+                                elif u == 2:
+                                    P = P_up.todense()
                                 # print(P[i, P[i, :, u] != 0, u])
-                                cost[u] = G[i, u] + alpha * np.sum(P[i, :, u] * J_opt)
+                                # cost[u] = G[i, u] + alpha * np.sum(P[i, :, u] * J_opt)
+                                cost[u] = G[i, u] + alpha * np.sum(P[i, :].T * J_opt)
                             J_opt[i] = np.min(cost)
                             u_opt[i] = np.argmin(cost)
-
+            del P
             current_error = np.max(np.abs(J_opt_prev - J_opt)) / np.max(np.abs(J_opt))
             if np.allclose(J_opt, J_opt_prev, rtol=1e-05, atol=1e-07):
                 # if current_error < err:
@@ -454,13 +478,13 @@ def freestyle_solution(Constants, P = None, G = None):
     # the exercise document!
     # Hence We need to analyze the State Space which is given by K
 
-    if K > 3840:
-        J_opt, u_opt = mixed_iteration_method(P, G, input_space)
+    if K > 1:
+        J_opt, u_opt = mixed_iteration_method(P_down, P_stay, P_up, G, input_space)
     else:
         # Note:
         # If K <= 1944 we use np.zeros
         # If 1944 < K <= 3840: we use lil_matrix
-        J_opt, u_opt = linear_programming(P, G, alpha, K, input_space)
+        J_opt, u_opt = linear_programming(P_down, P_stay, P_up, G, alpha, K, input_space)
 
 
 

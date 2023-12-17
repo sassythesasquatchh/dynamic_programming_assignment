@@ -25,6 +25,7 @@ import sys
 
 from Constants import Constants
 from ComputeTransitionProbabilities import compute_transition_probabilities
+from ComputeTransitionProbabilities import compute_transition_probabilities_csr
 from ComputeStageCosts import compute_stage_cost
 from Solver import solution, freestyle_solution
 
@@ -65,6 +66,7 @@ if __name__ == "__main__":
 
         # TODO implement this function in ComputeTransitionProbabilities.py
         P = compute_transition_probabilities(Constants)
+        P_0, P_1, P_2 = compute_transition_probabilities_csr(Constants)
         print("\r[X] Transition probabilities computed.     ")
     else:
         print(
